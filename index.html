@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permainan Memori</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+        }
+        
+        .game-info {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            width: 100px;
+            height: 100px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+        }
+        
+        .card.flipped {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            transform: rotateY(180deg);
+        }
+        
+        .card.matched {
+            background-color: #2ecc71;
+            cursor: default;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background-color: #27ae60;
+        }
+        
+        .instructions {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            max-width: 500px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Permainan Memori</h1>
+    
+    <div class="instructions">
+        <h2>Cara Bermain:</h2>
+        <ol>
+            <li>Klik pada kartu untuk membukanya.</li>
+            <li>Temukan pasangan kartu dengan simbol yang sama.</li>
+            <li>Jika kedua kartu yang dibuka tidak cocok, mereka akan tertutup kembali.</li>
+            <li>Lanjutkan sampai semua pasangan kartu ditemukan.</li>
+            <li>Usahakan menyelesaikan permainan dengan jumlah langkah sesedikit mungkin!</li>
+        </ol>
+    </div>
+    
+    <div class="game-info">
+        <p>Langkah: <span id="moves">0</span></p>
+        <p>Pasangan Ditemukan: <span id="pairs">0</span>/8</p>
+    </div>
+    
+    <div class="game-board" id="game-board"></div>
+    
+    <button id="restart">Mulai Ulang</button>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameBoard = document.getElementById('game-board');
+            const movesDisplay = document.getElementById('moves');
+            const pairsDisplay = document.getElementById('pairs');
+            const restartButton = document.getElementById('restart');
+            
+            let cards = [];
+            let flippedCards = [];
+            let moves = 0;
+            let pairsFound = 0;
+            let canFlip = true;
+            
+            // Symbols for the cards (8 pairs)
+            const symbols = ['🍎', '🍌', '🍒', '🍓', '🍊', '🍋', '🍉', '🍇', 
+                            '🍎', '🍌', '🍒', '🍓', '🍊', '🍋', '🍉', '🍇'];
+            
+            // Initialize the game
+            function initGame() {
+                // Reset game state
+                cards = [];
+                flippedCards = [];
+                moves = 0;
+                pairsFound = 0;
+                canFlip = true;
+                
+                // Update displays
+                movesDisplay.textContent = moves;
+                pairsDisplay.textContent = `${pairsFound}/8`;
+                
+                // Clear the game board
+                gameBoard.innerHTML = '';
+                
+                // Shuffle the symbols
+                const shuffledSymbols = [...symbols].sort(() => Math.random() - 0.5);
+                
+                // Create cards
+                shuffledSymbols.forEach((symbol, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.dataset.index = index;
+                    card.dataset.symbol = symbol;
+                    card.textContent = '?';
+                    
+                    card.addEventListener('click', flipCard);
+                    
+                    gameBoard.appendChild(card);
+                    cards.push(card);
+                });
+            }
+            
+            // Flip a card
+            function flipCard() {
+                if (!canFlip || this.classList.contains('flipped') || this.classList.contains('matched')) {
+                    return;
+                }
+                
+                this.classList.add('flipped');
+                this.textContent = this.dataset.symbol;
+                flippedCards.push(this);
+                
+                // If two cards are flipped, check for a match
+                if (flippedCards.length === 2) {
+                    moves++;
+                    movesDisplay.textContent = moves;
+                    
+                    canFlip = false;
+                    
+                    if (flippedCards[0].dataset.symbol === flippedCards[1].dataset.symbol) {
+                        // Match found
+                        flippedCards[0].classList.add('matched');
+                        flippedCards[1].classList.add('matched');
+                        flippedCards = [];
+                        pairsFound++;
+                        pairsDisplay.textContent = `${pairsFound}/8`;
+                        canFlip = true;
+                        
+                        // Check if game is over
+                        if (pairsFound === 8) {
+                            setTimeout(() => {
+                                alert(`Selamat! Anda menang dalam ${moves} langkah!`);
+                            }, 500);
+                        }
+                    } else {
+                        // No match, flip back after a delay
+                        setTimeout(() => {
+                            flippedCards[0].classList.remove('flipped');
+                            flippedCards[1].classList.remove('flipped');
+                            flippedCards[0].textContent = '?';
+                            flippedCards[1].textContent = '?';
+                            flippedCards = [];
+                            canFlip = true;
+                        }, 1000);
+                    }
+                }
+            }
+            
+            // Restart game
+            restartButton.addEventListener('click', initGame);
+            
+            // Start the game
+            initGame();
+        });
+    </script>
+</body>
+</html>
